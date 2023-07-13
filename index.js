@@ -28,8 +28,13 @@ async function run() {
     await client.connect();
 
     const classCollection = client.db("languageDb").collection("classes");
+    const instructorCollection = client.db("languageDb").collection("instructors");
 
     app.get('/classes', async(req, res)=>{
+            const result = await classCollection.find().toArray();
+            res.send(result);
+    })
+    app.get('/instructors', async(req, res)=>{
             const result = await classCollection.find().toArray();
             res.send(result);
     })
