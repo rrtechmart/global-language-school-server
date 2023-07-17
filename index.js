@@ -9,7 +9,7 @@ app.use(express.json());
 
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 // const uri = "mongodb+srv://<username>:<password>@cluster0.uyzlba8.mongodb.net/?retryWrites=true&w=majority";
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.uyzlba8.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -25,23 +25,84 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const classCollection = client.db("languageDb").collection("classes");
     const instructorCollection = client.db("languageDb").collection("instructors");
+    const userCollection = client.db("languageDb").collection("users");
+    const selectedClassCollection = client.db("languageDb").collection("selectedClasses");
 
-    app.get('/classes', async(req, res)=>{
-            const result = await classCollection.find().toArray();
-            res.send(result);
+    app.get('/users', async (req, res) => {
+      const result = await userCollection.find().toArray();
+      res.send(result);
     })
-    app.get('/instructors', async(req, res)=>{
-            const result = await classCollection.find().toArray();
-            res.send(result);
+
+    app.post('/users', async (req, res) => {
+      const users = req.body;
+      const query = { email: users.email };
+      const existingUser = await userCollection.findOne(query);
+      if (existingUser) {
+        return res.send({ message: "User already exist" })
+      }
+      const result = await userCollection.insertOne(users);
+      res.send(result);
+    })
+
+    app.get('/classes', async (req, res) => {
+      const result = await classCollection.find().toArray();
+      res.send(result);
+    })
+
+    // instructor related api
+
+    app.get('/instructorClass', async(req,res)=>{
+      
+      let query = {}
+      if(req.query?.email){
+        query= {email: req.query.email}
+      }
+      
+      const result = await instructorCollection.find(query).toArray();
+      res.send(result);
+
+    })
+
+    app.get('/instructors', async (req, res) => {
+      const result = await instructorCollection.find().toArray();
+      res.send(result);
+    })
+
+    // cart collection api.......
+
+    app.get('/selectedClasses', async (req, res) => {
+      const email = req.query.email;
+      if(!email){
+        return res.send ([]);
+      }
+      const query = { email : email};
+      const result = await selectedClassCollection.find(query).toArray();
+      res.send(result);      
+
+    })
+
+    app.post('/selectedClasses', async (req, res) => {
+      const classItem = req.body;
+      console.log(classItem);
+      const result = await selectedClassCollection.insertOne(classItem);
+      res.send(result);
+    })
+
+    app.delete('/selectedClasses/:id', async(req, res)=>{
+      const id = req.params.id;
+      const query = {_id : new ObjectId(id)};
+      const result = await selectedClassCollection.deleteOne(query);
+      res.send(result);
+
     })
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    // await client.db("admin").command({ ping: 1 });
+    // console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
@@ -50,12 +111,12 @@ async function run() {
 run().catch(console.dir);
 
 
-app.get('/', (req, res)=>{
-    res.send('Language school is running')
+app.get('/', (req, res) => {
+  res.send('Language school is running')
 })
 
 
 
-app.listen(port, ()=>{
-    console.log(`global school is running on port: ${port}`)
+app.listen(port, () => {
+  console.log(`global school is running on port: ${port}`)
 })
