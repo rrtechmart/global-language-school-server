@@ -103,6 +103,17 @@ async function run() {
       const result = await classCollection.updateOne(filter, docUpdate);
       res.send(result);
     })
+    app.patch('/classes/deny/:id', async(req, res)=>{
+      const id = req.params.id;
+      const filter ={ _id: new ObjectId(id)};
+      const docUpdate ={
+        $set: {
+          status: "denied"
+        },
+      }
+      const result = await classCollection.updateOne(filter, docUpdate);
+      res.send(result);
+    })
 
     // instructor related api
 
