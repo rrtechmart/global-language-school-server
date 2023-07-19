@@ -48,20 +48,71 @@ async function run() {
       res.send(result);
     })
 
+    app.patch('/users/instructors/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const docUpdate = {
+        $set: {
+          role: "instructor"
+        },
+      }
+      const result = await userCollection.updateOne(filter, docUpdate)
+      res.send(result)
+    })
+
+    app.patch('/users/admin/:id', async(req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }
+      const docUpdate = {
+        $set: {
+          role: "admin"
+        },
+      }
+      const result = await userCollection.updateOne(filter, docUpdate);
+      res.send(result);
+
+      })
+
+    // api for class
+    app.post('/classes', async (req, res) => {
+      const addedClass = req.body;
+      const result = await classCollection.insertOne(addedClass);
+      res.send(result);
+    })
+
     app.get('/classes', async (req, res) => {
       const result = await classCollection.find().toArray();
       res.send(result);
     })
 
+    app.get('/classes', async (req, res) => {
+      const email = req.body.email;
+      const query = { email: email };
+      const result = await classCollection.find(query).toArray()
+      res.send(result);
+    })
+
+    app.patch('/classes/:id', async(req, res)=>{
+      const id = req.params.id;
+      const filter ={ _id: new ObjectId(id)};
+      const docUpdate ={
+        $set: {
+          status: "approved"
+        },
+      }
+      const result = await classCollection.updateOne(filter, docUpdate);
+      res.send(result);
+    })
+
     // instructor related api
 
-    app.get('/instructorClass', async(req,res)=>{
-      
+    app.get('/instructorClass', async (req, res) => {
+
       let query = {}
-      if(req.query?.email){
-        query= {email: req.query.email}
+      if (req.query?.email) {
+        query = { email: req.query.email }
       }
-      
+
       const result = await instructorCollection.find(query).toArray();
       res.send(result);
 
@@ -76,12 +127,12 @@ async function run() {
 
     app.get('/selectedClasses', async (req, res) => {
       const email = req.query.email;
-      if(!email){
-        return res.send ([]);
+      if (!email) {
+        return res.send([]);
       }
-      const query = { email : email};
+      const query = { email: email };
       const result = await selectedClassCollection.find(query).toArray();
-      res.send(result);      
+      res.send(result);
 
     })
 
@@ -92,9 +143,9 @@ async function run() {
       res.send(result);
     })
 
-    app.delete('/selectedClasses/:id', async(req, res)=>{
+    app.delete('/selectedClasses/:id', async (req, res) => {
       const id = req.params.id;
-      const query = {_id : new ObjectId(id)};
+      const query = { _id: new ObjectId(id) };
       const result = await selectedClassCollection.deleteOne(query);
       res.send(result);
 
