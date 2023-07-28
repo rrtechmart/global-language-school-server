@@ -65,12 +65,13 @@ async function run() {
       res.send(result);
     })
 
-    // app.get('/users/:id', async(req, res)=>{
-    //   const id = req.params.id;
-    //   const query = {_id: new ObjectId(id)};
-    //   const result = await userCollection.findOne(query);
-    //   res.send(result);
-    // })
+    app.get('/users/:id', async(req, res)=>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await userCollection.findOne(query);
+      res.send(result);
+    })
+
 
     app.post('/users', async (req, res) => {
       const users = req.body;
@@ -118,6 +119,18 @@ async function run() {
         const user = await userCollection.findOne(query);
         const result = { admin: user?.role === 'admin' }
         res.send(result);
+      })
+
+      app.get('/users',  async(req, res)=>{
+        const email = req.query?.email;
+        if(!email){
+          return res.send([]);
+        }
+        const query = {email: email};
+        const user = await userCollection.findOne(query);
+        const result = { user: user?.role === 'instructor' }
+        res.send(result);
+       
       })
 
     // api for class
@@ -174,6 +187,7 @@ async function run() {
       res.send(result);
     })
 
+
     // instructor related api
 
     app.get('/instructorClass', async (req, res) => {
@@ -218,13 +232,15 @@ async function run() {
       const result = await paymentClassCollection.insertOne(paymentClass);
       res.send(result);
     })
+
+    // payment classes api
+
+    app.get('/paymentClasses', async(req, res)=>{
+      const result = await paymentClassCollection.find().toArray();
+      res.send(result);
+    })
     
-    // app.get('/selectedClasses/:email', async(req, res)=>{
-    //   const email = req.params.email;
-    //   const query = {email:email};
-    //   const result= await selectedClassCollection.findOne(query);
-    //   res.send(result);
-    // })
+    
 
     app.post('/selectedClasses', async (req, res) => {
       const classItem = req.body;
