@@ -23,18 +23,18 @@ app.use(function (req, res, next) {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-const verifyJWT = (req, res, next)=>{
+const verifyJWT = (req, res, next) => {
   const authorization = req.headers.authorization;
-  if(!authorization){
-    return res.status(401).send({error: true, message:'unauthorized access'});
+  if (!authorization) {
+    return res.status(401).send({ error: true, message: 'unauthorized access' });
   }
   // bearer token
 
   const token = authorization.split(' ')[1];
 
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded)=>{
-    if(err){
-      return res.status(401).send({error: true, message:'unauthorized access'})
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ error: true, message: 'unauthorized access' })
     }
     req.decoded = decoded;
     next();
@@ -66,20 +66,20 @@ async function run() {
     const selectedClassCollection = client.db("languageDb").collection("selectedClasses");
     const paymentClassCollection = client.db("languageDb").collection("paymentClasses");
 
-    app.post('/jwt', (req, res)=>{
+    app.post('/jwt', (req, res) => {
       const user = req.body;
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
-      res.send({token});
+      res.send({ token });
     })
 
-    app.get('/users', verifyJWT, async (req, res) => {
+    app.get('/users', async (req, res) => {
       const result = await userCollection.find().toArray();
       res.send(result);
     })
 
-    app.get('/users/:id', async(req, res)=>{
+    app.get('/users/:id', async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)};
+      const query = { _id: new ObjectId(id) };
       const result = await userCollection.findOne(query);
       res.send(result);
     })
@@ -108,7 +108,7 @@ async function run() {
       res.send(result)
     })
 
-    app.patch('/users/admin/:id', async(req, res) => {
+    app.patch('/users/admin/:id', async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) }
       const docUpdate = {
@@ -119,31 +119,33 @@ async function run() {
       const result = await userCollection.updateOne(filter, docUpdate);
       res.send(result);
 
-      })
+    })
 
-      app.get('/users/admin',  async(req, res)=>{
-        const email = req.query?.email;
-        if(!email){
-          return res.send([]);
-        }
+   
+    app.get('/users/admin/:email', verifyJWT, async (req, res) => {
+      const email = req.params?.email;
 
-        const query = {email:email}
-        const user = await userCollection.findOne(query);
-        const result = { admin: user?.role === 'admin' }
-        res.send(result);
-      })
+      if (req.decoded.email !== email) {
+        res.send({ admin: false })
+      }
 
-      app.get('/users',  async(req, res)=>{
-        const email = req.query?.email;
-        if(!email){
-          return res.send([]);
-        }
-        const query = {email: email};
-        const user = await userCollection.findOne(query);
-        const result = { user: user?.role === 'instructor' }
-        res.send(result);
-       
-      })
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      const result = { admin: user?.role === 'admin' }
+      res.send(result);
+    })
+
+    app.get('/users', async (req, res) => {
+      const email = req.query?.email;
+      if (!email) {
+        return res.send([]);
+      }
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      const result = { user: user?.role === 'instructor' }
+      res.send(result);
+
+    })
 
     // api for class
     app.post('/classes', async (req, res) => {
@@ -164,10 +166,10 @@ async function run() {
       res.send(result);
     })
 
-    app.patch('/classes/approve/:id', async(req, res)=>{
+    app.patch('/classes/approve/:id', async (req, res) => {
       const id = req.params.id;
-      const filter ={ _id: new ObjectId(id)};
-      const docUpdate ={
+      const filter = { _id: new ObjectId(id) };
+      const docUpdate = {
         $set: {
           status: "approved"
         },
@@ -175,10 +177,10 @@ async function run() {
       const result = await classCollection.updateOne(filter, docUpdate);
       res.send(result);
     })
-    app.patch('/classes/deny/:id', async(req, res)=>{
+    app.patch('/classes/deny/:id', async (req, res) => {
       const id = req.params.id;
-      const filter ={ _id: new ObjectId(id)};
-      const docUpdate ={
+      const filter = { _id: new ObjectId(id) };
+      const docUpdate = {
         $set: {
           status: "denied"
         },
@@ -187,9 +189,9 @@ async function run() {
       res.send(result);
     })
 
-    app.patch('/classes/feedback/:id', async(req, res)=>{
+    app.patch('/classes/feedback/:id', async (req, res) => {
       const id = req.params.id;
-      const filter ={_id: new ObjectId(id)};
+      const filter = { _id: new ObjectId(id) };
       const docUpdate = {
         $set: {
           feedback: req.body.feedback,
@@ -231,28 +233,28 @@ async function run() {
       res.send(result);
 
     })
-// for pay
-    app.get('/selectedClasses/:id', async(req, res)=>{
+    // for pay
+    app.get('/selectedClasses/:id', async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)};
-      const result= await selectedClassCollection.findOne(query);
+      const query = { _id: new ObjectId(id) };
+      const result = await selectedClassCollection.findOne(query);
       res.send(result);
     })
 
-    app.post('/paymentClasses', async(req, res)=>{
-      const paymentClass= req.body;
+    app.post('/paymentClasses', async (req, res) => {
+      const paymentClass = req.body;
       const result = await paymentClassCollection.insertOne(paymentClass);
       res.send(result);
     })
 
     // payment classes api
 
-    app.get('/paymentClasses', async(req, res)=>{
+    app.get('/paymentClasses', async (req, res) => {
       const result = await paymentClassCollection.find().toArray();
       res.send(result);
     })
-    
-    
+
+
 
     app.post('/selectedClasses', async (req, res) => {
       const classItem = req.body;
@@ -270,9 +272,9 @@ async function run() {
     })
 
     // create payment intent
-    app.post('/create-payment-intent', async(req, res)=>{
-      const {price} = req.body;
-      const amount = price*100;
+    app.post('/create-payment-intent', async (req, res) => {
+      const { price } = req.body;
+      const amount = price * 100;
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
         currency: 'usd',
