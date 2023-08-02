@@ -20,7 +20,20 @@ app.use(function (req, res, next) {
   next();
 });
 
-app.use(cors(corsOptions));
+app.use(cors({
+  origin: 'http://127.0.0.1:5173',
+  methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'PATCH', 'DELETE'],
+  credentials: true,
+}));
+
+app.use(
+  cors({
+    origin: ['https://global-language-school-a1fcd.web.app'],
+    methods: "*",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "*",
+  })
+);
 app.use(express.json());
 
 const verifyJWT = (req, res, next) => {
@@ -77,12 +90,12 @@ async function run() {
       res.send(result);
     })
 
-    app.get('/users/:id', async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await userCollection.findOne(query);
-      res.send(result);
-    })
+    // app.get('/users/:id', async (req, res) => {
+    //   const id = req.params.id;
+    //   const query = { _id: new ObjectId(id) };
+    //   const result = await userCollection.findOne(query);
+    //   res.send(result);
+    // })
 
 
     app.post('/users', async (req, res) => {
@@ -96,6 +109,8 @@ async function run() {
       res.send(result);
     })
 
+    // instructor related api
+
     app.patch('/users/instructors/:id', async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
@@ -108,6 +123,22 @@ async function run() {
       res.send(result)
     })
 
+    app.get('/users/instructor', async (req, res) => {
+      const query = { role: 'instructor' };
+      const cursor = await userCollection.find(query).toArray();
+      res.send(cursor);
+    });
+
+    // app.get('/users/instructor/:email', async(req, res)=>{
+    //   const email = req.params.email;
+    //   const query = {email: email};
+    //   const result = await userCollection.findOne(query);
+    //   res.send(result); 
+    // })
+
+
+
+    // admin related api
     app.patch('/users/admin/:id', async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) }
@@ -135,17 +166,7 @@ async function run() {
       res.send(result);
     })
 
-    app.get('/users', async (req, res) => {
-      const email = req.query?.email;
-      if (!email) {
-        return res.send([]);
-      }
-      const query = { email: email };
-      const user = await userCollection.findOne(query);
-      const result = { user: user?.role === 'instructor' }
-      res.send(result);
-
-    })
+   
 
     // api for class
     app.post('/classes', async (req, res) => {
@@ -216,6 +237,7 @@ async function run() {
 
     })
 
+    // this api only instructors and its from instructorsCollections not users
     app.get('/instructors', async (req, res) => {
       const result = await instructorCollection.find().toArray();
       res.send(result);
